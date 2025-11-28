@@ -1,5 +1,5 @@
-// main.js (module)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+// تحديث مسارات استيراد Firebase لأحدث إصدار (مثل 10.x.x)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -7,35 +7,37 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   updateProfile,
-} from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 import {
   getFirestore,
-  doc,
-  setDoc,
   collection,
   addDoc,
+  setDoc,
+  doc,
   query,
   orderBy,
   onSnapshot,
   serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
-/* ====== تكوين Firebase (استبدل إذا لزم) ====== */
+// تهيئة Firebase
+// !!! ملاحظة هامة جداً: لا تقم بتضمين مفتاح API (apiKey) مباشرة في شيفرة العميل المصدرية
+// للتطبيقات الإنتاجية. هذا يعرضه للعامة. استخدم متغيرات البيئة
+// (مثل Firebase Hosting environment variables) أو Firebase Functions لإخفاءه.
+// لأغراض التطوير والاختبار المحلي، يمكن استخدامه، ولكن كن حذراً.
 const firebaseConfig = {
-  apiKey: "AIzaSyCHgPyMNy7puBLsxIJNgc51Y7YJMaHAOoI",
+  apiKey: "AIzaSyCHgPyMNy7puBLsxIJNgc51Y7YJMaHAOoI", // استبدل هذا بمفتاح API الخاص بك
   authDomain: "wep-zyad.firebaseapp.com",
   projectId: "wep-zyad",
-  storageBucket: "wep-zyad.firebasestorage.app",
+  storageBucket: "wep-zyad.appspot.com",
   messagingSenderId: "197850687110",
   appId: "1:197850687110:web:86ed3244f7c9f60cd01307",
-  measurementId: "G-BS1WX0ZJ36",
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ====== عناصر DOM ====== */
+// عناصر الـ DOM
 const loginForm = document.getElementById("login-form");
 const registerForm = document.getElementById("register-form");
 const authContainer = document.getElementById("auth-container");
@@ -43,8 +45,8 @@ const chatContainer = document.getElementById("chat-container");
 
 const loginBtn = document.getElementById("login-btn");
 const registerBtn = document.getElementById("register-btn");
-const toRegister = document.getElementById("to-register");
-const toLogin = document.getElementById("to-login");
+const toRegisterLink = document.getElementById("to-register");
+const toLoginLink = document.getElementById("to-login");
 
 const loginError = document.getElementById("login-error");
 const registerError = document.getElementById("register-error");
@@ -53,272 +55,334 @@ const messagesList = document.getElementById("messages-list");
 const sendBtn = document.getElementById("send-btn");
 const messageInput = document.getElementById("message-text");
 const signoutBtn = document.getElementById("signout-btn");
-const userAvatar = document.getElementById("user-avatar");
-const userDisplay = document.getElementById("user-display");
+const chatChannelNameElement = document.getElementById("chat-channel-name");
 
-toRegister.addEventListener("click", (e) => {
+// تبديل واجهات المصادقة
+const clearAuthErrors = () => {
+  loginError.textContent = "";
+  registerError.textContent = "";
+};
+
+toRegisterLink.addEventListener("click", (e) => {
   e.preventDefault();
-  showRegister();
-});
-toLogin.addEventListener("click", (e) => {
-  e.preventDefault();
-  showLogin();
-});
-
-loginBtn.addEventListener("click", signIn);
-registerBtn.addEventListener("click", signUp);
-sendBtn.addEventListener("click", sendMessage);
-messageInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") sendMessage();
-});
-signoutBtn.addEventListener("click", signOut);
-
-/* ====== وظائف الانتقال UI ====== */
-function showRegister() {
   loginForm.classList.add("hidden");
   registerForm.classList.remove("hidden");
-  loginError.textContent = "";
-  registerError.textContent = "";
-}
-function showLogin() {
+  clearAuthErrors(); // مسح الأخطاء عند التبديل
+});
+
+toLoginLink.addEventListener("click", (e) => {
+  e.preventDefault();
   registerForm.classList.add("hidden");
   loginForm.classList.remove("hidden");
-  registerError.textContent = "";
-  loginError.textContent = "";
-}
+  clearAuthErrors(); // مسح الأخطاء عند التبديل
+});
 
-/* ====== VALIDATIONS ====== */
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-function isStrongPassword(pw) {
-  return pw && pw.length >= 6;
-}
+// وظائف التحقق من الصحة
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isStrongPassword = (pw) => pw && pw.length >= 6;
+const isValidDisplayName = (name) => name && name.trim().length > 2; // يجب أن يكون الاسم 3 أحرف على الأقل
 
-/* ====== SIGN UP ====== */
-async function signUp() {
-  registerError.textContent = "";
+// التسجيل (Sign Up)
+registerBtn.addEventListener("click", async () => {
+  clearAuthErrors(); // مسح الأخطاء السابقة
   const displayName = document.getElementById("reg-displayname").value.trim();
   const email = document.getElementById("reg-email").value.trim();
-  const phone = document.getElementById("reg-phone").value.trim();
   const password = document.getElementById("reg-password").value;
 
-  if (!displayName || !email || !password) {
-    registerError.textContent = "الرجاء ملء جميع الحقول المطلوبة.";
+  if (!isValidDisplayName(displayName)) {
+    registerError.textContent = "الرجاء إدخال اسم عرض صالح (3 أحرف على الأقل).";
+    return;
+  }
+  if (!email || !password) {
+    registerError.textContent =
+      "الرجاء ملء حقول البريد الإلكتروني وكلمة المرور.";
     return;
   }
   if (!isValidEmail(email)) {
-    registerError.textContent = "البريد الإلكتروني غير بصيغة صحيحة.";
+    registerError.textContent = "صيغة البريد الإلكتروني غير صالحة.";
     return;
   }
   if (!isStrongPassword(password)) {
-    registerError.textContent =
-      "كلمة المرور ضعيفة — يجب أن تكون 6 أحرف على الأقل.";
+    registerError.textContent = "كلمة المرور ضعيفة جداً (6 أحرف على الأقل).";
     return;
   }
 
   try {
-    const credential = await createUserWithEmailAndPassword(
+    const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
       password
     );
-    const user = credential.user;
+    const user = userCredential.user;
 
-    await updateProfile(user, { displayName });
-
-    await setDoc(doc(db, "users", user.uid), {
-      email,
-      displayName,
-      phoneNumber: phone || null,
-      createdAt: serverTimestamp(),
-      role: "user",
+    await updateProfile(user, {
+      displayName: displayName,
     });
 
-    document.getElementById("reg-displayname").value = "";
-    document.getElementById("reg-email").value = "";
-    document.getElementById("reg-phone").value = "";
-    document.getElementById("reg-password").value = "";
+    // حفظ بيانات المستخدم في Firestore
+    await setDoc(doc(db, "users", user.uid), {
+      displayName: displayName,
+      email: email,
+      createdAt: serverTimestamp(),
+    });
 
-    console.log("تم التسجيل وتخزين المعلومات.");
-  } catch (error) {
-    console.error("SignUp error:", error);
-    let msg = "حدث خطأ أثناء التسجيل.";
-    if (error.code === "auth/email-already-in-use")
-      msg = "هذا البريد الإلكتروني مستخدم بالفعل.";
-    else if (error.code === "auth/invalid-email")
-      msg = "البريد الإلكتروني غير صالح.";
-    else if (error.code === "auth/weak-password")
-      msg = "كلمة المرور ضعيفة. (٦ أحرف على الأقل)";
-    registerError.textContent = msg;
+    console.log("تم التسجيل بنجاح! المستخدم:", user.displayName);
+  } catch (err) {
+    console.error("خطأ في التسجيل:", err.code, err.message);
+    if (err.code === "auth/email-already-in-use") {
+      registerError.textContent = "هذا البريد الإلكتروني مستخدم بالفعل.";
+    } else if (err.code === "auth/weak-password") {
+      registerError.textContent = "كلمة المرور ضعيفة جداً.";
+    } else {
+      registerError.textContent = `حدث خطأ أثناء التسجيل: ${err.message}`;
+    }
   }
-}
+});
 
-/* ====== SIGN IN ====== */
-async function signIn() {
-  loginError.textContent = "";
+// تسجيل الدخول (Sign In)
+loginBtn.addEventListener("click", async () => {
+  clearAuthErrors(); // مسح الأخطاء السابقة
   const email = document.getElementById("login-email").value.trim();
   const password = document.getElementById("login-password").value;
 
   if (!email || !password) {
-    loginError.textContent = "الرجاء ملء البريد وكلمة المرور.";
+    loginError.textContent = "الرجاء ملء حقول البريد الإلكتروني وكلمة المرور.";
     return;
   }
   if (!isValidEmail(email)) {
-    loginError.textContent = "صيغة البريد الإلكتروني غير صحيحة.";
+    loginError.textContent = "صيغة البريد الإلكتروني غير صالحة.";
     return;
   }
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
-  } catch (error) {
-    console.error("SignIn error:", error);
-    let msg = "خطأ في البريد أو كلمة المرور.";
-    if (error.code === "auth/user-not-found") msg = "لا يوجد حساب بهذا البريد.";
-    else if (error.code === "auth/wrong-password")
-      msg = "كلمة المرور غير صحيحة.";
-    loginError.textContent = msg;
+    console.log("تم تسجيل الدخول بنجاح!");
+  } catch (err) {
+    console.error("خطأ في تسجيل الدخول:", err.code, err.message);
+    if (err.code === "auth/user-not-found") {
+      loginError.textContent = "لا يوجد مستخدم بهذا البريد الإلكتروني.";
+    } else if (err.code === "auth/wrong-password") {
+      loginError.textContent = "كلمة المرور غير صحيحة.";
+    } else if (err.code === "auth/invalid-email") {
+      loginError.textContent = "صيغة البريد الإلكتروني غير صحيحة.";
+    } else {
+      loginError.textContent = `حدث خطأ أثناء تسجيل الدخول: ${err.message}`;
+    }
   }
-}
+});
 
-/* ====== SIGN OUT ====== */
-function signOut() {
-  firebaseSignOut(auth).catch((err) => console.error("SignOut err:", err));
-}
+// تسجيل الخروج (Sign Out)
+signoutBtn.addEventListener("click", () => {
+  firebaseSignOut(auth)
+    .then(() => {
+      console.log("تم تسجيل الخروج بنجاح.");
+      // عند تسجيل الخروج، يجب مسح الرسائل المعروضة
+      messagesList.innerHTML = "";
+    })
+    .catch((error) => {
+      console.error("خطأ في تسجيل الخروج:", error);
+    });
+});
 
-/* ====== CHAT: إرسال رسالة ====== */
-async function sendMessage() {
+// إرسال رسالة
+sendBtn.addEventListener("click", async () => {
   const text = messageInput.value.trim();
   const user = auth.currentUser;
-  if (!user) return;
 
-  if (!text) {
-    messageInput.placeholder = "اكتب شيئًا لإرساله...";
-    setTimeout(() => (messageInput.placeholder = "اكتب رسالتك هنا..."), 1500);
-    return;
+  if (!text || !user) {
+    return; // لا ترسل إذا كانت الرسالة فارغة أو لا يوجد مستخدم
   }
+
+  // تعطيل زر الإرسال مؤقتاً لمنع الإرسال المتعدد
+  sendBtn.disabled = true;
 
   try {
-    const chatCol = collection(db, "general-chat");
-    await addDoc(chatCol, {
-      text,
+    await addDoc(collection(db, "general-chat"), {
+      text: text,
       senderUid: user.uid,
-      senderName: user.displayName || "مستخدم",
+      senderName: user.displayName || "مستخدم مجهول",
       timestamp: serverTimestamp(),
     });
-    messageInput.value = "";
-  } catch (err) {
-    console.error("sendMessage error:", err);
-    messageInput.placeholder = "فشل الإرسال. تحقق من الاتصال.";
-    setTimeout(() => (messageInput.placeholder = "اكتب رسالتك هنا..."), 2000);
+    messageInput.value = ""; // مسح حقل الإدخال
+    messageInput.style.height = "auto"; // إعادة ضبط ارتفاع الـ textarea
+    sendBtn.disabled = true; // تعطيل الزر مرة أخرى لأن حقل الإدخال أصبح فارغاً
+  } catch (error) {
+    console.error("خطأ في إرسال الرسالة:", error);
+    // يمكن عرض رسالة خطأ للمستخدم هنا
+  } finally {
+    // التأكد من تفعيل الزر في حالة حدوث خطأ أو اكتمال الإرسال
+    if (messageInput.value.trim() !== "") {
+      sendBtn.disabled = false;
+    }
   }
+});
+
+// مراقبة الرسائل في المحادثة العامة (Chat Listener)
+let unsubscribeFromChat = null;
+
+// دالة مساعدة لتنسيق التاريخ والوقت
+function formatMessageTimestamp(timestamp) {
+  if (!timestamp || !timestamp.toDate) {
+    return "الآن";
+  }
+
+  const messageDate = timestamp.toDate();
+  const now = new Date();
+
+  // خيارات التنسيق للوقت
+  const timeOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true, // استخدام تنسيق 12 ساعة (ص/م)
+  };
+  const formattedTime = messageDate.toLocaleTimeString("ar-EG", timeOptions);
+
+  // إذا كانت الرسالة اليوم
+  if (
+    messageDate.getDate() === now.getDate() &&
+    messageDate.getMonth() === now.getMonth() &&
+    messageDate.getFullYear() === now.getFullYear()
+  ) {
+    return formattedTime;
+  }
+
+  // إذا كانت الرسالة أمس
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (
+    messageDate.getDate() === yesterday.getDate() &&
+    messageDate.getMonth() === yesterday.getMonth() &&
+    messageDate.getFullYear() === yesterday.getFullYear()
+  ) {
+    return `أمس، ${formattedTime}`;
+  }
+
+  // إذا كانت الرسالة أقدم من أمس
+  const dateOptions = {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  };
+  const formattedDate = messageDate.toLocaleDateString("ar-EG", dateOptions);
+
+  return `${formattedDate}، ${formattedTime}`;
 }
 
-/* ====== LISTENER: عرض الرسائل فورياً ====== */
-let unsubscribe = null;
 function setupChatListener() {
-  if (unsubscribe) unsubscribe();
+  if (unsubscribeFromChat) {
+    unsubscribeFromChat(); // إلغاء الاشتراك السابق إذا كان موجوداً
+    unsubscribeFromChat = null;
+  }
 
   const q = query(collection(db, "general-chat"), orderBy("timestamp", "asc"));
-  unsubscribe = onSnapshot(
-    q,
-    (snap) => {
-      messagesList.innerHTML = "";
-      snap.forEach((docSnap) => {
-        const data = docSnap.data();
-        const senderUid = data.senderUid || "";
-        const senderName = data.senderName || "مستخدم";
-        const text = data.text || "";
-        const ts = data.timestamp
-          ? data.timestamp.toDate
-            ? data.timestamp.toDate()
-            : new Date(data.timestamp)
-          : null;
 
-        let timeStr = "الآن";
-        if (ts) {
-          const opts = { hour: "2-digit", minute: "2-digit" };
-          timeStr = ts.toLocaleTimeString("ar-EG", opts);
-        }
+  unsubscribeFromChat = onSnapshot(q, (snapshot) => {
+    // لتجنب وميض الشاشة، يمكننا تحديث الرسائل الموجودة فقط
+    // أو إعادة بناء القائمة إذا كانت التغييرات جوهرية
+    messagesList.innerHTML = ""; // إعادة بناء كاملة لتسهيل العرض
 
-        const row = document.createElement("div");
-        row.className = "msg-row";
-        const isMe = auth.currentUser && auth.currentUser.uid === senderUid;
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const currentUser = auth.currentUser;
+      const isMe = currentUser && currentUser.uid === data.senderUid;
 
-        const avatar = document.createElement("div");
-        avatar.className = "avatar-xs";
-        avatar.textContent = senderName
-          ? senderName.charAt(0).toUpperCase()
-          : "?";
+      const messageItem = document.createElement("div");
+      messageItem.classList.add("message-item");
+      if (isMe) {
+        messageItem.classList.add("my-message"); // إضافة فئة لرسائل المستخدم الحالي
+      }
 
-        const bubble = document.createElement("div");
-        bubble.className = "msg " + (isMe ? "msg-me" : "msg-other");
+      const avatarPlaceholder = document.createElement("div");
+      avatarPlaceholder.classList.add("message-avatar-placeholder");
+      // يمكنك هنا تعيين صورة الرمزية من بيانات المستخدم إذا كانت متوفرة
+      // avatarPlaceholder.style.backgroundImage = `url(${data.senderPhotoURL || 'default-avatar.png'})`;
+      // يمكنك عرض الحرف الأول من اسم المستخدم هنا
+      avatarPlaceholder.textContent = data.senderName
+        ? data.senderName.charAt(0)
+        : "?";
 
-        const meta = document.createElement("div");
-        meta.className = "meta";
-        const nameSpan = document.createElement("span");
-        nameSpan.className = "name";
-        nameSpan.textContent = isMe ? "أنت" : senderName;
-        const timeSpan = document.createElement("span");
-        timeSpan.className = "time";
-        timeSpan.textContent = timeStr;
+      const messageContent = document.createElement("div");
+      messageContent.classList.add("message-content");
 
-        meta.appendChild(nameSpan);
-        meta.appendChild(timeSpan);
+      const messageHeader = document.createElement("div");
+      messageHeader.classList.add("message-header");
 
-        const textDiv = document.createElement("div");
-        textDiv.className = "text";
-        textDiv.textContent = text;
+      const senderNameSpan = document.createElement("span");
+      senderNameSpan.classList.add("message-sender-name");
+      senderNameSpan.textContent = isMe ? "أنت" : data.senderName;
 
-        bubble.appendChild(meta);
-        bubble.appendChild(textDiv);
+      const timestampSpan = document.createElement("span");
+      timestampSpan.classList.add("message-timestamp");
+      // استخدام الدالة الجديدة لتنسيق الوقت والتاريخ
+      timestampSpan.textContent = formatMessageTimestamp(data.timestamp);
 
-        if (isMe) {
-          row.style.justifyContent = "flex-start";
-          row.appendChild(avatar);
-          row.appendChild(bubble);
-        } else {
-          row.style.justifyContent = "flex-end";
-          row.appendChild(bubble);
-          row.appendChild(avatar);
-        }
+      messageHeader.appendChild(senderNameSpan);
+      messageHeader.appendChild(timestampSpan);
 
-        messagesList.appendChild(row);
-      });
-      messagesList.scrollTop = messagesList.scrollHeight;
-    },
-    (err) => {
-      console.error("Snapshot error:", err);
-    }
-  );
+      const messageTextDiv = document.createElement("div");
+      messageTextDiv.classList.add("message-text");
+      messageTextDiv.textContent = data.text;
+
+      messageContent.appendChild(messageHeader);
+      messageContent.appendChild(messageTextDiv);
+
+      // ترتيب العناصر داخل الرسالة يعتمد على ما إذا كانت رسالتي أم لا
+      if (isMe) {
+        messageItem.appendChild(messageContent);
+        messageItem.appendChild(avatarPlaceholder);
+      } else {
+        messageItem.appendChild(avatarPlaceholder);
+        messageItem.appendChild(messageContent);
+      }
+
+      messagesList.appendChild(messageItem);
+    });
+
+    // التمرير إلى الأسفل بعد تحديث الرسائل
+    messagesList.scrollTop = messagesList.scrollHeight;
+  });
 }
 
-/* ====== Auth state observer ====== */
+// مراقبة حالة المصادقة (Auth State)
 onAuthStateChanged(auth, (user) => {
   if (user) {
     authContainer.classList.add("hidden");
     chatContainer.classList.remove("hidden");
-
-    const name = user.displayName || "مستخدم";
-    userDisplay.textContent = name;
-    userAvatar.textContent = name.charAt(0).toUpperCase();
-
-    setupChatListener();
+    // عرض اسم القناة كما هو في الـ HTML
+    chatChannelNameElement.textContent = "المحادثة العامة";
+    setupChatListener(); // بدء الاستماع للرسائل
   } else {
-    if (unsubscribe) {
-      unsubscribe();
-      unsubscribe = null;
+    // إذا لم يكن هناك مستخدم، إخفاء المحادثة وإظهار شاشة المصادقة
+    if (unsubscribeFromChat) {
+      unsubscribeFromChat(); // إيقاف الاستماع للرسائل
+      unsubscribeFromChat = null;
     }
     chatContainer.classList.add("hidden");
     authContainer.classList.remove("hidden");
-    showLogin();
+    loginForm.classList.remove("hidden");
+    registerForm.classList.add("hidden");
+    clearAuthErrors(); // مسح أي أخطاء عند تسجيل الخروج
+    messagesList.innerHTML = ""; // مسح الرسائل المعروضة
   }
 });
 
-/* ====== تصدير وظائف للعناصر (في حال الحاجة من ال HTML) ====== */
-window.showRegister = showRegister;
-window.showLogin = showLogin;
-window.signIn = signIn;
-window.signUp = signUp;
-window.signOut = signOut;
-window.sendMessage = sendMessage;
+// ضبط ارتفاع الـ textarea ديناميكياً
+messageInput.addEventListener("input", () => {
+  messageInput.style.height = "auto";
+  messageInput.style.height = messageInput.scrollHeight + "px";
+  // تفعيل/تعطيل زر الإرسال بناءً على وجود نص
+  sendBtn.disabled = messageInput.value.trim() === "";
+});
+
+// إرسال الرسالة عند الضغط على Enter (Shift + Enter لسطر جديد)
+messageInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    if (!sendBtn.disabled) {
+      sendBtn.click();
+    }
+  }
+});
+
+// تفعيل زر الإرسال في البداية إذا كان هناك نص افتراضي (غير متوقع عادة)
+sendBtn.disabled = messageInput.value.trim() === "";
