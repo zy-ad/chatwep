@@ -1,209 +1,423 @@
 @import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap");
 
+/* Discord inspired colors */
 :root {
-  --whatsapp-green: #25d366;
-  --whatsapp-dark: #075e54;
-  --bg: #e5ddd5;
-  --card-bg: #ffffff;
+  --primary-color: #5865f2; /* Discord blue */
+  --secondary-color: #2c2f33; /* Main background for chat */
+  --tertiary-color: #36393f; /* Darker background for header/input */
+  --quaternary-color: #202225; /* Even darker for input fields */
+  --text-color: #dcddde; /* Light text */
+  --text-muted: #72767d; /* Muted text */
+  --message-hover-bg: rgba(79, 84, 92, 0.16); /* Subtle hover for messages */
+  --error-color: #ed4245; /* Error red */
+  --success-color: #3ba55c; /* Success green */
+  --my-message-bg: #40444b; /* Background for my messages */
 }
 
+/* Global Styles */
 * {
   box-sizing: border-box;
 }
+
 html,
 body {
-  height: 100%;
   margin: 0;
+  padding: 0;
   font-family: "Cairo", sans-serif;
-  direction: rtl;
+  height: 100%;
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+  direction: rtl; /* Ensure RTL for the entire app */
+  overflow: hidden; /* Prevent body scroll, chat-list handles scrolling */
 }
 
+/* Auth Container */
 .page-center {
-  min-height: 100vh;
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: linear-gradient(180deg, #f7f7f7, #eef2f3);
+  align-items: center;
+  min-height: 100vh; /* Use min-height to allow content to grow if needed */
+  background: var(--secondary-color);
+  padding: 20px; /* Add padding for smaller screens */
 }
 
-/* بطاقة الدخول */
 .auth-card {
-  width: 360px;
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 22px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  width: 100%; /* Make it full width on small screens */
+  max-width: 360px; /* Max width for larger screens */
+  background: var(--tertiary-color);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
+
 .auth-card h2 {
-  margin: 0 0 14px;
   text-align: center;
+  margin-bottom: 20px;
+  color: #fff;
 }
+
 .auth-card input {
   width: 100%;
-  padding: 12px;
+  padding: 12px 10px;
   margin: 8px 0;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+  border-radius: 4px;
+  border: 1px solid var(--quaternary-color);
+  background-color: var(--quaternary-color);
+  color: var(--text-color);
   font-size: 15px;
-}
-.auth-card button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 6px;
-  border-radius: 8px;
-  border: none;
-  background: var(--whatsapp-dark);
-  color: white;
-  font-weight: 700;
-  cursor: pointer;
-}
-.auth-card .muted {
-  font-size: 13px;
-  color: #666;
-  text-align: center;
-  margin-top: 10px;
-}
-.error-message {
-  color: #dc3545;
-  text-align: center;
-  margin-top: 8px;
-  font-weight: 600;
+  transition: border-color 0.2s ease; /* Add transition for input focus */
 }
 
-/* chat layout */
+.auth-card input:focus {
+  outline: none; /* Remove default focus outline */
+  border-color: var(--primary-color); /* Highlight on focus */
+}
+
+.auth-card input::placeholder {
+  color: var(--text-muted);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 4px;
+  background: var(--primary-color);
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #4752c4;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: var(--error-color);
+  text-align: center;
+  font-weight: 600;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.muted {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 15px;
+}
+
+.link-styled {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.link-styled:hover {
+  text-decoration: underline;
+  color: #aeb1f7; /* Lighter hover for links */
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Chat Layout */
 .chat-layout {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  max-width: 900px;
-  margin: 0 auto;
-  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.06);
-  background: var(--bg);
+  background-color: var(--secondary-color);
 }
 
-/* header */
 .chat-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: var(--whatsapp-dark);
+  padding: 10px 20px;
+  background: var(--tertiary-color);
   color: #fff;
+  border-bottom: 1px solid var(--quaternary-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 1;
 }
+
 .header-left {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
 }
-.avatar-sm {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  color: #fff;
+
+.chat-icon {
+  font-size: 24px;
 }
+
 .display-name {
   font-weight: 700;
-}
-.sub {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 18px;
+  color: #fff;
 }
 
 .btn-danger {
-  background: #e53935;
-  border: none;
+  background: var(--error-color);
   color: #fff;
-  padding: 8px 12px;
-  border-radius: 18px;
+  padding: 8px 15px;
+  border-radius: 4px;
+  border: none;
   cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
 }
 
-/* messages list */
+.btn-danger:hover {
+  background-color: #a13639;
+}
+
+/* Messages List */
 .messages-list {
   flex: 1;
   overflow-y: auto;
-  padding: 18px;
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.02),
-    rgba(0, 0, 0, 0.02)
-  );
-  background-size: cover;
-  background-color: var(--bg);
+  padding: 10px 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px; /* Slightly more gap between messages for readability */
+  background-color: var(--secondary-color);
+  scroll-behavior: smooth;
 }
 
-/* message bubble */
-.msg-row {
+/* Custom scrollbar */
+.messages-list::-webkit-scrollbar {
+  width: 8px;
+}
+.messages-list::-webkit-scrollbar-track {
+  background: var(--secondary-color);
+}
+.messages-list::-webkit-scrollbar-thumb {
+  background-color: #4f545c;
+  border-radius: 4px;
+  border: 2px solid var(--secondary-color);
+}
+
+/* Individual Message Item (Discord Style) */
+.message-item {
   display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  gap: 10px;
-  max-width: 70%;
+  align-items: flex-start;
+  padding: 8px 12px; /* Adjusted padding */
+  width: 100%;
+  border-radius: 8px; /* Rounded corners for message items */
+  transition: background-color 0.2s ease;
 }
-.msg {
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-size: 14px;
-  line-height: 1.3;
-  max-width: 400px;
+
+.message-item:hover {
+  background-color: var(--message-hover-bg);
 }
-.msg-me {
-  background: #dcf8c6;
+
+/* Style for current user's messages */
+.message-item.my-message {
+  flex-direction: row-reverse; /* My messages on the right */
+  background-color: var(--my-message-bg); /* Different background */
+  margin-left: auto; /* Push to the right */
+  max-width: 90%; /* Keep it from stretching too much */
 }
-.msg-other {
-  background: #fff;
+
+.message-item.my-message .message-avatar-placeholder {
+  margin-right: 16px; /* Space on the left of avatar */
+  margin-left: 0;
 }
-.meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  margin-bottom: 4px;
-  color: #555;
-}
-.avatar-xs {
-  width: 32px;
-  height: 32px;
+
+.message-avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  background-color: #6a7a7a;
   border-radius: 50%;
-  background: #bbb;
-  display: flex;
-  align-items: center;
+  margin-left: 16px;
+  display: flex; /* Center content */
   justify-content: center;
-  font-weight: 600;
-  color: #fff;
+  align-items: center;
+  font-weight: bold;
+  color: white;
+  font-size: 18px;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
-/* compose */
+.message-content {
+  flex-grow: 1;
+  max-width: calc(100% - 56px); /* 40px avatar + 16px margin */
+  /* No specific background color here, it's on .message-item */
+}
+
+.message-item.my-message .message-content {
+  text-align: right; /* Right align text in my messages */
+}
+
+.message-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px; /* زيادة المسافة بين الاسم والوقت */
+  margin-bottom: 4px;
+}
+
+.message-item.my-message .message-header {
+  flex-direction: row-reverse; /* Reverse order for my messages header */
+  justify-content: flex-end;
+}
+
+.message-sender-name {
+  font-weight: 700;
+  color: #fff;
+  font-size: 16px;
+}
+
+.message-timestamp {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.message-text {
+  font-size: 15px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  color: var(--text-color);
+}
+
+/* Compose Area */
 .compose-area {
   display: flex;
-  gap: 8px;
-  padding: 10px 16px;
-  border-top: 1px solid #ddd;
-  background: #f0f0f0;
+  gap: 10px;
+  padding: 10px 20px;
+  background-color: var(--tertiary-color);
+  border-top: 1px solid var(--quaternary-color);
+  align-items: flex-end;
 }
-.compose-area input {
+
+.compose-area textarea {
   flex: 1;
-  padding: 10px;
-  border-radius: 18px;
-  border: 1px solid #ccc;
-}
-.compose-area button {
-  padding: 10px 18px;
-  border-radius: 18px;
+  padding: 10px 15px;
+  border-radius: 8px;
   border: none;
-  background: var(--whatsapp-green);
+  background-color: var(--quaternary-color);
+  color: var(--text-color);
+  font-size: 15px;
+  resize: none;
+  min-height: 44px;
+  max-height: 120px;
+  overflow-y: auto;
+  transition: border-color 0.2s ease;
+}
+
+.compose-area textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.compose-area textarea::-webkit-scrollbar {
+  width: 6px;
+}
+.compose-area textarea::-webkit-scrollbar-track {
+  background: var(--quaternary-color);
+}
+.compose-area textarea::-webkit-scrollbar-thumb {
+  background-color: #4f545c;
+  border-radius: 3px;
+  border: 1px solid var(--quaternary-color);
+}
+
+.compose-area textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.btn-send {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: var(--primary-color);
   color: #fff;
   cursor: pointer;
   font-weight: 700;
+  font-size: 15px;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  min-width: 80px;
+  height: 44px;
 }
-.hidden {
-  display: none;
+
+.btn-send:hover:not(:disabled) {
+  background-color: #4752c4;
+}
+
+.btn-send:disabled {
+  opacity: 0.5; /* Dim the button when disabled */
+  cursor: not-allowed;
+}
+
+/* Animations (existing) */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 600px) {
+  .chat-header,
+  .messages-list,
+  .compose-area {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .message-item {
+    padding: 6px 8px;
+  }
+
+  .message-avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 16px;
+    margin-left: 10px;
+  }
+
+  .message-item.my-message .message-avatar-placeholder {
+    margin-right: 10px;
+    margin-left: 0;
+  }
+
+  .message-content {
+    max-width: calc(100% - 42px); /* 32px avatar + 10px margin */
+  }
+
+  .message-sender-name {
+    font-size: 14px;
+  }
+
+  .message-text {
+    font-size: 14px;
+  }
+
+  .compose-area textarea {
+    font-size: 14px;
+    min-height: 40px;
+  }
+
+  .btn-send {
+    padding: 8px 15px;
+    font-size: 14px;
+    min-width: 70px;
+    height: 40px;
+  }
 }
