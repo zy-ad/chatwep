@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تطبيق مراسلات عام</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- شاشة الدخول/التسجيل -->
+    <div id="auth-container" class="page-center">
+      <div class="auth-card" id="login-form">
+        <h2>تسجيل الدخول</h2>
+        <input type="email" id="login-email" placeholder="البريد الإلكتروني" />
+        <input type="password" id="login-password" placeholder="كلمة المرور" />
+        <button id="login-btn">دخول</button>
+        <p id="login-error" class="error-message"></p>
+        <p class="muted">
+          ليس لديك حساب؟ <a href="#" id="to-register">سجل الآن</a>
+        </p>
+      </div>
+
+      <div class="auth-card hidden" id="register-form">
+        <h2>إنشاء حساب جديد</h2>
+        <input type="text" id="reg-displayname" placeholder="الاسم المعروض" />
+        <input type="email" id="reg-email" placeholder="البريد الإلكتروني" />
+        <input type="tel" id="reg-phone" placeholder="رقم الهاتف (اختياري)" />
+        <input
+          type="password"
+          id="reg-password"
+          placeholder="كلمة المرور (6 أحرف على الأقل)"
+        />
+        <button id="register-btn">تسجيل</button>
+        <p id="register-error" class="error-message"></p>
+        <p class="muted">
+          لديك حساب بالفعل؟ <a href="#" id="to-login">سجّل دخول</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- واجهة المحادثة -->
+    <div id="chat-container" class="hidden chat-layout">
+      <header class="chat-header">
+        <div class="header-left">
+          <div id="user-avatar" class="avatar-sm">?</div>
+          <div>
+            <div id="user-display" class="display-name">المحادثة العامة</div>
+            <div class="sub muted">عام • كل الأعضاء</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <button id="signout-btn" class="btn-danger">تسجيل الخروج</button>
+        </div>
+      </header>
+
+      <div id="messages-list" class="messages-list">
+        <!-- الرسائل تظهر هنا -->
+      </div>
+
+      <div class="compose-area">
+        <input type="text" id="message-text" placeholder="اكتب رسالتك هنا..." />
+        <button id="send-btn">إرسال</button>
+      </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
