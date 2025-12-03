@@ -3,89 +3,580 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>سنابكات | SnapCUT</title>
-    <link rel="stylesheet" href="style.css" />
-    <!-- استخدم defer لضمان تحميل الـ DOM قبل تشغيل السكريبت -->
-    <script type="module" src="main.js" defer></script>
+    <title>دردشة الإدارة الفاخرة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap");
+      body {
+        font-family: "Tajawal", sans-serif;
+        background-color: #0d1117; /* خلفية داكنة فاخرة */
+        color: #c9d1d9;
+      }
+      .message-bubble {
+        background-color: #161b22;
+        border-radius: 12px 12px 12px 0;
+        transition: transform 0.3s ease-out;
+      }
+      .my-message-bubble {
+        background-color: #30475e;
+        border-radius: 12px 12px 0 12px;
+      }
+      /* تنسيق خاص لرسائل الأدمن */
+      .admin-message-bubble {
+        background-color: #4a1f1f !important; /* خلفية داكنة حمراء */
+        border: 1px solid #ff4d4d;
+        border-radius: 12px;
+      }
+      .admin-tag {
+        background-color: #ffc107; /* لون ذهبي */
+        color: #161b22;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 0.75rem;
+        margin-right: 8px;
+        display: inline-flex;
+        align-items: center;
+      }
+      /* تلوين اسم الأدمن باللون الأحمر */
+      .admin-username {
+        color: #ff4d4d !important; /* أحمر ناري */
+        font-weight: 700;
+      }
+      .new-message-animation {
+        animation: fadeInPop 0.3s ease-out;
+      }
+      @keyframes fadeInPop {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .send-button-effect:active {
+        transform: scale(0.95);
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.7);
+      }
+      /* تنسيقات شريط التمرير */
+      .custom-scroll::-webkit-scrollbar {
+        width: 8px;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background-color: #30475e;
+        border-radius: 10px;
+      }
+      .custom-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #30475e #161b22;
+        scroll-behavior: smooth;
+      }
+    </style>
   </head>
-  <body>
-    <!-- شاشة تسجيل الدخول والمصادقة -->
-    <div id="auth-container" class="page-center">
-      <div class="auth-card" id="login-form">
-        <h2>تسجيل الدخول</h2>
-        <input
-          type="email"
-          id="login-email"
-          placeholder="البريد الإلكتروني"
-          autocomplete="username"
-        />
-        <input
-          type="password"
-          id="login-password"
-          placeholder="كلمة المرور"
-          autocomplete="current-password"
-        />
-        <button id="login-btn" class="btn-primary">دخول</button>
-        <p id="login-error" class="error-message"></p>
-        <p class="muted">
-          ليس لديك حساب؟
-          <a href="#" id="to-register" class="link-styled">سجل الآن</a>
+  <body class="p-4 flex flex-col h-screen">
+    <div
+      id="login-screen"
+      class="fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50"
+    >
+      <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-sm">
+        <h2 class="text-3xl font-bold mb-6 text-center text-blue-400">
+          👋 انضم إلى الدردشة
+        </h2>
+        <p class="text-gray-400 mb-4 text-center">
+          يرجى اختيار مجموعة إيموجي كاسم مستخدم لك (3 إلى 9 إيموجي). **لا يمكن
+          استخدام 👑**.
         </p>
-      </div>
-
-      <div class="auth-card hidden" id="register-form">
-        <h2>إنشاء حساب</h2>
         <input
           type="text"
-          id="reg-displayname"
-          placeholder="الاسم المعروض"
-          autocomplete="name"
+          id="emoji-input"
+          maxlength="20"
+          placeholder="أدخل الإيموجي هنا (3-9)"
+          class="w-full p-3 mb-6 text-center text-2xl bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
-        <input
-          type="email"
-          id="reg-email"
-          placeholder="البريد الإلكتروني"
-          autocomplete="email"
-        />
-        <input
-          type="password"
-          id="reg-password"
-          placeholder="كلمة المرور"
-          autocomplete="new-password"
-        />
-        <button id="register-btn" class="btn-primary">تسجيل</button>
-        <p id="register-error" class="error-message"></p>
-        <p class="muted">
-          لديك حساب بالفعل؟
-          <a href="#" id="to-login" class="link-styled">سجّل دخول</a>
-        </p>
+
+        <button
+          id="join-button"
+          class="send-button-effect w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition duration-300"
+        >
+          الدخول للمحادثة
+        </button>
+        <p id="error-message" class="text-red-400 text-center mt-4 hidden"></p>
       </div>
     </div>
 
-    <!-- واجهة المحادثة -->
-    <div id="chat-container" class="hidden chat-layout">
-      <header class="chat-header">
-        <div class="header-left">
-          <span class="chat-icon">💬</span>
-          <div class="display-name" id="chat-channel-name">المحادثة العامة</div>
+    <div
+      id="chat-app"
+      class="flex flex-col flex-grow w-full max-w-4xl mx-auto hidden"
+    >
+      <header
+        class="bg-gray-800 p-4 rounded-t-xl shadow-md flex justify-between items-center mb-4"
+      >
+        <div class="flex items-center gap-3">
+          <h1 class="text-xl font-bold text-blue-300">
+            الدردشة العامة الفاخرة 💬
+          </h1>
+          <button
+            id="logout-button"
+            class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow transition"
+          >
+            تسجيل خروج 🚪
+          </button>
         </div>
-        <div class="header-right">
-          <button id="signout-btn" class="btn-danger">تسجيل الخروج</button>
+
+        <div
+          id="user-info"
+          class="text-sm text-gray-400 flex flex-col items-end"
+        >
+          <span class="mb-1 text-right">
+            مرحباً: <span id="current-emoji" class="text-2xl ml-2"></span>
+            <span
+              id="admin-status"
+              class="text-xs mr-2 p-1 rounded-full font-bold"
+            ></span>
+          </span>
+          <span
+            id="current-user-id"
+            class="text-xs p-1 bg-gray-700 rounded-lg max-w-full truncate text-right"
+          >
+            ... جاري المصادقة ...
+          </span>
         </div>
       </header>
 
-      <div id="messages-list" class="messages-list">
-        <!-- الرسائل ستظهر هنا -->
+      <div
+        id="messages-container"
+        class="custom-scroll flex-grow overflow-y-auto p-4 space-y-4 bg-gray-800 rounded-b-xl shadow-inner mb-4 relative"
+      >
+        <div id="loading-indicator" class="text-center text-gray-500 py-4">
+          ... جاري تحميل الرسائل ...
+        </div>
       </div>
 
-      <div class="compose-area">
-        <textarea
-          id="message-text"
+      <div
+        class="flex p-4 bg-gray-900 rounded-xl shadow-2xl sticky bottom-0 z-10"
+      >
+        <input
+          type="text"
+          id="message-input"
           placeholder="اكتب رسالتك هنا..."
-          rows="1"
-        ></textarea>
-        <button id="send-btn" class="btn-send" disabled>إرسال</button>
+          class="flex-grow p-3 ml-3 bg-gray-700 border border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          maxlength="200"
+        />
+        <button
+          id="send-button"
+          class="send-button-effect bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg flex items-center justify-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 transform rotate-90"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+            />
+          </svg>
+        </button>
       </div>
     </div>
+
+    <div
+      id="custom-modal"
+      class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100] hidden"
+    >
+      <div
+        class="bg-gray-800 p-6 rounded-xl shadow-2xl max-w-xs w-full text-center"
+      >
+        <p id="modal-text" class="text-gray-200 mb-4"></p>
+        <button
+          onclick="document.getElementById('custom-modal').classList.add('hidden')"
+          class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200"
+        >
+          حسناً
+        </button>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import {
+        getAuth,
+        signInAnonymously,
+        signInWithCustomToken,
+        onAuthStateChanged,
+        signOut,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import {
+        getFirestore,
+        addDoc,
+        onSnapshot,
+        collection,
+        query,
+        orderBy,
+        serverTimestamp,
+        setLogLevel,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+      // =======================================================
+      // إعدادات Firebase
+      // =======================================================
+      const firebaseConfig = {
+        apiKey: "AIzaSyA9lv-gWjL2zBjVirLZWPtAIXoqrIzKqZ8",
+        authDomain: "zyadwep2.firebaseapp.com",
+        projectId: "zyadwep2",
+        storageBucket: "zyadwep2.firebasestorage.app",
+        messagingSenderId: "687176161588",
+        appId: "1:687176161588:web:06b528a8aa55ca0852ed61",
+        measurementId: "G-7ZJ6PSCP28",
+      };
+
+      // إعداد مستوى سجل Firebase للمساعدة في حل المشاكل
+      setLogLevel("silent"); // تم تغييره لتقليل الإزعاج، استخدم 'debug' عند الحاجة
+
+      // تهيئة التطبيق وقاعدة البيانات
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+
+      // اسم الكولكشن الرئيسي - تم توحيده لضمان العمل
+      const COLLECTION_NAME = "chat_messages";
+
+      let userId = null;
+      let userName = localStorage.getItem("chatEmoji") || null;
+
+      // =======================================================
+      // تعريف الأدمن
+      // =======================================================
+      const ADMIN_TAG = "👑";
+      // ضع معرف الأدمن هنا
+      const HARDCODED_ADMIN_ID = "YOUR_ADMIN_USER_ID_HERE";
+
+      // العناصر الرئيسية في الواجهة
+      const loginScreen = document.getElementById("login-screen");
+      const chatApp = document.getElementById("chat-app");
+      const joinButton = document.getElementById("join-button");
+      const emojiInput = document.getElementById("emoji-input");
+      const errorMessage = document.getElementById("error-message");
+      const messagesContainer = document.getElementById("messages-container");
+      const messageInput = document.getElementById("message-input");
+      const sendButton = document.getElementById("send-button");
+      const currentEmojiDisplay = document.getElementById("current-emoji");
+      const currentUserIdDisplay = document.getElementById("current-user-id");
+      const adminStatusDisplay = document.getElementById("admin-status");
+      const modal = document.getElementById("custom-modal");
+      const modalText = document.getElementById("modal-text");
+      const logoutButton = document.getElementById("logout-button");
+      const loadingIndicator = document.getElementById("loading-indicator");
+
+      const showModal = (text) => {
+        modalText.textContent = text;
+        modal.classList.remove("hidden");
+      };
+
+      const EMOJI_ONLY_REGEX =
+        /^[\p{Emoji}\p{Emoji_Modifier}\p{Emoji_Presentation}\p{Emoji_Component}\s\u200d\ufe0f]*$/u;
+
+      // =======================================================
+      // 1. التحكم في الدخول والخروج
+      // =======================================================
+
+      const isValidUsername = (text) => {
+        if (!text || typeof text !== "string") return false;
+        if (text.includes(ADMIN_TAG)) return false;
+
+        const emojiArray = Array.from(text).filter((char) =>
+          EMOJI_ONLY_REGEX.test(char)
+        );
+        const emojiCount = emojiArray.length;
+        if (emojiCount < 3 || emojiCount > 9) return false;
+        return EMOJI_ONLY_REGEX.test(text.trim());
+      };
+
+      joinButton.addEventListener("click", () => {
+        const potentialEmoji = emojiInput.value.trim();
+        errorMessage.classList.add("hidden");
+
+        if (isValidUsername(potentialEmoji)) {
+          userName = potentialEmoji;
+          localStorage.setItem("chatEmoji", userName);
+
+          if (userId) {
+            updateUIForLoggedInUser();
+            setupChatListeners();
+          }
+          loginScreen.classList.add("hidden");
+          chatApp.classList.remove("hidden");
+        } else {
+          errorMessage.textContent =
+            "الرجاء إدخال 3 إلى 9 إيموجي صالحين. لا يمكن استخدام 👑.";
+          errorMessage.classList.remove("hidden");
+          emojiInput.value = "";
+        }
+      });
+
+      // زر تسجيل الخروج
+      logoutButton.addEventListener("click", async () => {
+        try {
+          await signOut(auth);
+          localStorage.removeItem("chatEmoji");
+          window.location.reload(); // إعادة تحميل الصفحة
+        } catch (error) {
+          console.error("Logout Error", error);
+        }
+      });
+
+      const isAdmin = () => userId && userId === HARDCODED_ADMIN_ID;
+
+      const updateAdminStatusUI = () => {
+        if (isAdmin()) {
+          adminStatusDisplay.textContent = `(${ADMIN_TAG} أدمن)`;
+          adminStatusDisplay.classList.add("text-yellow-400");
+        } else {
+          adminStatusDisplay.textContent = "";
+        }
+      };
+
+      const updateUIForLoggedInUser = () => {
+        currentEmojiDisplay.textContent = userName;
+        currentUserIdDisplay.textContent = `معرف المستخدم: ${userId}`;
+        updateAdminStatusUI();
+      };
+
+      // =======================================================
+      // 2. إعداد مصادقة Firebase
+      // =======================================================
+
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          userId = user.uid;
+          if (userName) {
+            loginScreen.classList.add("hidden");
+            chatApp.classList.remove("hidden");
+            updateUIForLoggedInUser();
+            setupChatListeners();
+          } else {
+            currentUserIdDisplay.textContent = `معرف المستخدم: ${userId}`;
+            loginScreen.classList.remove("hidden");
+            chatApp.classList.add("hidden");
+          }
+        } else {
+          authenticateUser();
+        }
+      });
+
+      const authenticateUser = async () => {
+        try {
+          await signInAnonymously(auth);
+        } catch (error) {
+          console.error("Auth Error:", error);
+          showModal("فشل في المصادقة. تحقق من إعدادات Firebase.");
+        }
+      };
+
+      // =======================================================
+      // 3. إرسال الرسائل
+      // =======================================================
+
+      const sendMessage = async () => {
+        const text = messageInput.value.trim();
+
+        if (!userId || !userName) {
+          showModal("الرجاء تسجيل الدخول أولاً.");
+          return;
+        }
+
+        if (text === "") return;
+
+        const storedUserName = isAdmin() ? ADMIN_TAG : userName;
+        const messageTag = isAdmin() ? ADMIN_TAG : null;
+
+        try {
+          // استخدام الكولكشن الجذرية مباشرة
+          await addDoc(collection(db, COLLECTION_NAME), {
+            userId: userId,
+            userName: storedUserName,
+            message: text,
+            tag: messageTag,
+            timestamp: serverTimestamp(), // هذا قد يكون null لحظياً
+            sentAt: new Date().toLocaleTimeString("ar-EG", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            }),
+          });
+
+          // تأثير الزر
+          sendButton.classList.remove("bg-blue-600");
+          sendButton.classList.add("bg-green-500");
+          setTimeout(() => {
+            sendButton.classList.remove("bg-green-500");
+            sendButton.classList.add("bg-blue-600");
+          }, 100);
+
+          messageInput.value = "";
+          messageInput.focus();
+        } catch (error) {
+          console.error("Send Error:", error);
+          showModal(`فشل الإرسال: ${error.message}`);
+        }
+      };
+
+      sendButton.addEventListener("click", sendMessage);
+      messageInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+      });
+
+      // =======================================================
+      // 4. استقبال وعرض الرسائل (تم الإصلاح)
+      // =======================================================
+
+      let unsubscribe = null;
+
+      const setupChatListeners = () => {
+        if (!userId) return;
+        if (unsubscribe) unsubscribe(); // منع التكرار
+
+        // جلب الرسائل بدون شرط orderBy معقد في البداية لتجنب الحاجة لفهرسة يدوية
+        // سنقوم بالترتيب في جانب العميل (Client-side) لضمان ظهورها
+        const q = query(collection(db, COLLECTION_NAME));
+
+        unsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            loadingIndicator.classList.add("hidden"); // إخفاء التحميل
+
+            const messagesFragment = document.createDocumentFragment();
+            let isScrolledToBottom =
+              messagesContainer.scrollHeight - messagesContainer.scrollTop <=
+              messagesContainer.clientHeight + 100;
+
+            // مسح الحاوية لإعادة الرسم
+            messagesContainer.innerHTML = "";
+
+            const messagesData = [];
+            snapshot.forEach((doc) => {
+              const data = doc.data();
+              // إضافة المعرف للمساعدة في الـ Key إذا لزم الأمر
+              data.id = doc.id;
+              messagesData.push(data);
+            });
+
+            // ************** الإصلاح الجوهري للترتيب **************
+            // نقوم بترتيب الرسائل يدوياً. الرسالة الجديدة تكون timestamp الخاص بها null
+            // نعتبر الـ null هو "الآن" (new Date) حتى تظهر في الأسفل فوراً
+            messagesData.sort((a, b) => {
+              const dateA = a.timestamp ? a.timestamp.toDate() : new Date();
+              const dateB = b.timestamp ? b.timestamp.toDate() : new Date();
+              return dateA - dateB;
+            });
+
+            messagesData.forEach((data) => {
+              const messageElement = createMessageElement(data);
+              messagesFragment.appendChild(messageElement);
+            });
+
+            messagesContainer.appendChild(messagesFragment);
+
+            // التمرير التلقائي للأسفل
+            if (isScrolledToBottom || messagesData.length > 0) {
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+          },
+          (error) => {
+            console.error("Snapshot Error:", error);
+            // لا نظهر مودال هنا لتجنب إزعاج المستخدم في كل تحديث خاطئ
+            loadingIndicator.textContent = "خطأ في تحميل الرسائل.";
+          }
+        );
+      };
+
+      const createMessageElement = (data) => {
+        const isMe = data.userId === userId;
+        const isSenderAdmin =
+          data.userId === HARDCODED_ADMIN_ID &&
+          HARDCODED_ADMIN_ID !== "YOUR_ADMIN_USER_ID_HERE";
+
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `flex ${
+          isMe ? "justify-end" : "justify-start"
+        } new-message-animation mb-4`; // Added mb-4 for spacing
+
+        const contentDiv = document.createElement("div");
+        let bubbleClass = isMe ? "my-message-bubble" : "message-bubble";
+        if (isSenderAdmin) bubbleClass = "admin-message-bubble";
+
+        contentDiv.className = `max-w-xs md:max-w-md p-3 shadow-lg ${bubbleClass} text-right`;
+
+        // سطر المستخدم
+        const userLineDiv = document.createElement("div");
+        userLineDiv.className =
+          "flex items-center mb-1 justify-end flex-row-reverse gap-2";
+        // عكسنا الاتجاه ليتناسب مع العربية بشكل أفضل داخل الفقاعة
+
+        if (data.tag === ADMIN_TAG) {
+          const tagSpan = document.createElement("span");
+          tagSpan.className = "admin-tag";
+          tagSpan.textContent = ADMIN_TAG;
+          userLineDiv.appendChild(tagSpan);
+        }
+
+        const userSpan = document.createElement("span");
+        let usernameClass = isMe ? "text-blue-200" : "text-green-300";
+        if (isSenderAdmin) usernameClass = "admin-username";
+
+        userSpan.className = `font-bold text-xl ${usernameClass}`;
+        userSpan.textContent = data.userName;
+        userLineDiv.appendChild(userSpan);
+
+        contentDiv.appendChild(userLineDiv);
+
+        // النص
+        const messageP = document.createElement("p");
+        messageP.className =
+          "text-base text-white whitespace-pre-wrap leading-relaxed";
+        messageP.dir = "auto"; // دعم الاتجاه التلقائي للنص
+        messageP.textContent = data.message;
+        contentDiv.appendChild(messageP);
+
+        // الوقت
+        const timeSpan = document.createElement("span");
+        timeSpan.className = `block text-[10px] mt-2 opacity-70 ${
+          isMe ? "text-blue-100" : "text-gray-300"
+        } text-left`;
+
+        // التعامل مع الوقت الحالي (Pending)
+        let timeText = data.sentAt;
+        if (!timeText && data.timestamp) {
+          timeText = new Date(data.timestamp.toDate()).toLocaleTimeString(
+            "ar-EG",
+            {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            }
+          );
+        }
+        if (!timeText) timeText = "الآن";
+
+        timeSpan.textContent = timeText;
+        contentDiv.appendChild(timeSpan);
+
+        messageDiv.appendChild(contentDiv);
+        return messageDiv;
+      };
+
+      // التهيئة الأولية
+      if (userName) {
+        emojiInput.value = userName;
+      } else {
+        loginScreen.classList.remove("hidden");
+      }
+    </script>
   </body>
 </html>
