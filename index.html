@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>دردشة الإدارة الفاخرة</title>
+    <title>يوزر موجي</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap");
@@ -11,6 +11,8 @@
         font-family: "Tajawal", sans-serif;
         background-color: #0d1117; /* خلفية داكنة فاخرة */
         color: #c9d1d9;
+        height: 100vh; /* ارتفاع كامل للشاشة */
+        overflow: hidden; /* منع تمرير الصفحة بالكامل */
       }
       .message-bubble {
         background-color: #161b22;
@@ -75,7 +77,7 @@
       }
     </style>
   </head>
-  <body class="p-4 flex flex-col h-screen">
+  <body class="p-4 flex flex-col h-screen box-border">
     <div
       id="login-screen"
       class="fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50"
@@ -108,10 +110,10 @@
 
     <div
       id="chat-app"
-      class="flex flex-col flex-grow w-full max-w-4xl mx-auto hidden"
+      class="flex flex-col flex-grow w-full max-w-4xl mx-auto h-full hidden overflow-hidden rounded-xl shadow-2xl bg-gray-800 relative"
     >
       <header
-        class="bg-gray-800 p-4 rounded-t-xl shadow-md flex justify-between items-center mb-4"
+        class="bg-gray-800 p-4 shadow-md flex justify-between items-center sticky top-0 z-50 border-b border-gray-700 w-full"
       >
         <div class="flex items-center gap-3">
           <h1 class="text-xl font-bold text-blue-300">
@@ -147,7 +149,7 @@
 
       <div
         id="messages-container"
-        class="custom-scroll flex-grow overflow-y-auto p-4 space-y-4 bg-gray-800 rounded-b-xl shadow-inner mb-4 relative"
+        class="custom-scroll flex-grow overflow-y-auto p-4 space-y-4 bg-gray-800 relative pb-4"
       >
         <div id="loading-indicator" class="text-center text-gray-500 py-4">
           ... جاري تحميل الرسائل ...
@@ -155,7 +157,7 @@
       </div>
 
       <div
-        class="flex p-4 bg-gray-900 rounded-xl shadow-2xl sticky bottom-0 z-10"
+        class="flex p-4 bg-gray-900 border-t border-gray-700 sticky bottom-0 z-50"
       >
         <input
           type="text"
@@ -236,15 +238,12 @@
         measurementId: "G-7ZJ6PSCP28",
       };
 
-      // إعداد مستوى سجل Firebase للمساعدة في حل المشاكل
-      setLogLevel("silent"); // تم تغييره لتقليل الإزعاج، استخدم 'debug' عند الحاجة
+      setLogLevel("silent");
 
-      // تهيئة التطبيق وقاعدة البيانات
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
       const auth = getAuth(app);
 
-      // اسم الكولكشن الرئيسي - تم توحيده لضمان العمل
       const COLLECTION_NAME = "chat_messages";
 
       let userId = null;
@@ -254,10 +253,8 @@
       // تعريف الأدمن
       // =======================================================
       const ADMIN_TAG = "👑";
-      // ضع معرف الأدمن هنا
       const HARDCODED_ADMIN_ID = "YOUR_ADMIN_USER_ID_HERE";
 
-      // العناصر الرئيسية في الواجهة
       const loginScreen = document.getElementById("login-screen");
       const chatApp = document.getElementById("chat-app");
       const joinButton = document.getElementById("join-button");
@@ -281,6 +278,13 @@
 
       const EMOJI_ONLY_REGEX =
         /^[\p{Emoji}\p{Emoji_Modifier}\p{Emoji_Presentation}\p{Emoji_Component}\s\u200d\ufe0f]*$/u;
+
+      // دالة مساعدة لإنزال الشاشة للأسفل
+      const scrollToBottom = () => {
+        setTimeout(() => {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 100);
+      };
 
       // =======================================================
       // 1. التحكم في الدخول والخروج
@@ -312,6 +316,8 @@
           }
           loginScreen.classList.add("hidden");
           chatApp.classList.remove("hidden");
+          // تأكد من التمرير للأسفل عند فتح الشاشة
+          scrollToBottom();
         } else {
           errorMessage.textContent =
             "الرجاء إدخال 3 إلى 9 إيموجي صالحين. لا يمكن استخدام 👑.";
@@ -320,12 +326,11 @@
         }
       });
 
-      // زر تسجيل الخروج
       logoutButton.addEventListener("click", async () => {
         try {
           await signOut(auth);
           localStorage.removeItem("chatEmoji");
-          window.location.reload(); // إعادة تحميل الصفحة
+          window.location.reload();
         } catch (error) {
           console.error("Logout Error", error);
         }
@@ -397,13 +402,12 @@
         const messageTag = isAdmin() ? ADMIN_TAG : null;
 
         try {
-          // استخدام الكولكشن الجذرية مباشرة
           await addDoc(collection(db, COLLECTION_NAME), {
             userId: userId,
             userName: storedUserName,
             message: text,
             tag: messageTag,
-            timestamp: serverTimestamp(), // هذا قد يكون null لحظياً
+            timestamp: serverTimestamp(),
             sentAt: new Date().toLocaleTimeString("ar-EG", {
               hour: "2-digit",
               minute: "2-digit",
@@ -411,7 +415,6 @@
             }),
           });
 
-          // تأثير الزر
           sendButton.classList.remove("bg-blue-600");
           sendButton.classList.add("bg-green-500");
           setTimeout(() => {
@@ -421,6 +424,8 @@
 
           messageInput.value = "";
           messageInput.focus();
+          // النزول للأسفل فور الإرسال
+          scrollToBottom();
         } catch (error) {
           console.error("Send Error:", error);
           showModal(`فشل الإرسال: ${error.message}`);
@@ -433,43 +438,33 @@
       });
 
       // =======================================================
-      // 4. استقبال وعرض الرسائل (تم الإصلاح)
+      // 4. استقبال وعرض الرسائل
       // =======================================================
 
       let unsubscribe = null;
 
       const setupChatListeners = () => {
         if (!userId) return;
-        if (unsubscribe) unsubscribe(); // منع التكرار
+        if (unsubscribe) unsubscribe();
 
-        // جلب الرسائل بدون شرط orderBy معقد في البداية لتجنب الحاجة لفهرسة يدوية
-        // سنقوم بالترتيب في جانب العميل (Client-side) لضمان ظهورها
         const q = query(collection(db, COLLECTION_NAME));
 
         unsubscribe = onSnapshot(
           q,
           (snapshot) => {
-            loadingIndicator.classList.add("hidden"); // إخفاء التحميل
+            loadingIndicator.classList.add("hidden");
 
             const messagesFragment = document.createDocumentFragment();
-            let isScrolledToBottom =
-              messagesContainer.scrollHeight - messagesContainer.scrollTop <=
-              messagesContainer.clientHeight + 100;
 
-            // مسح الحاوية لإعادة الرسم
             messagesContainer.innerHTML = "";
 
             const messagesData = [];
             snapshot.forEach((doc) => {
               const data = doc.data();
-              // إضافة المعرف للمساعدة في الـ Key إذا لزم الأمر
               data.id = doc.id;
               messagesData.push(data);
             });
 
-            // ************** الإصلاح الجوهري للترتيب **************
-            // نقوم بترتيب الرسائل يدوياً. الرسالة الجديدة تكون timestamp الخاص بها null
-            // نعتبر الـ null هو "الآن" (new Date) حتى تظهر في الأسفل فوراً
             messagesData.sort((a, b) => {
               const dateA = a.timestamp ? a.timestamp.toDate() : new Date();
               const dateB = b.timestamp ? b.timestamp.toDate() : new Date();
@@ -483,14 +478,12 @@
 
             messagesContainer.appendChild(messagesFragment);
 
-            // التمرير التلقائي للأسفل
-            if (isScrolledToBottom || messagesData.length > 0) {
-              messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
+            // ************** تعديل جوهري **************
+            // دائماً انزل للأسفل عند وصول أي تحديث
+            scrollToBottom();
           },
           (error) => {
             console.error("Snapshot Error:", error);
-            // لا نظهر مودال هنا لتجنب إزعاج المستخدم في كل تحديث خاطئ
             loadingIndicator.textContent = "خطأ في تحميل الرسائل.";
           }
         );
@@ -505,7 +498,7 @@
         const messageDiv = document.createElement("div");
         messageDiv.className = `flex ${
           isMe ? "justify-end" : "justify-start"
-        } new-message-animation mb-4`; // Added mb-4 for spacing
+        } new-message-animation mb-4`;
 
         const contentDiv = document.createElement("div");
         let bubbleClass = isMe ? "my-message-bubble" : "message-bubble";
@@ -513,11 +506,9 @@
 
         contentDiv.className = `max-w-xs md:max-w-md p-3 shadow-lg ${bubbleClass} text-right`;
 
-        // سطر المستخدم
         const userLineDiv = document.createElement("div");
         userLineDiv.className =
           "flex items-center mb-1 justify-end flex-row-reverse gap-2";
-        // عكسنا الاتجاه ليتناسب مع العربية بشكل أفضل داخل الفقاعة
 
         if (data.tag === ADMIN_TAG) {
           const tagSpan = document.createElement("span");
@@ -536,21 +527,18 @@
 
         contentDiv.appendChild(userLineDiv);
 
-        // النص
         const messageP = document.createElement("p");
         messageP.className =
           "text-base text-white whitespace-pre-wrap leading-relaxed";
-        messageP.dir = "auto"; // دعم الاتجاه التلقائي للنص
+        messageP.dir = "auto";
         messageP.textContent = data.message;
         contentDiv.appendChild(messageP);
 
-        // الوقت
         const timeSpan = document.createElement("span");
         timeSpan.className = `block text-[10px] mt-2 opacity-70 ${
           isMe ? "text-blue-100" : "text-gray-300"
         } text-left`;
 
-        // التعامل مع الوقت الحالي (Pending)
         let timeText = data.sentAt;
         if (!timeText && data.timestamp) {
           timeText = new Date(data.timestamp.toDate()).toLocaleTimeString(
@@ -571,7 +559,6 @@
         return messageDiv;
       };
 
-      // التهيئة الأولية
       if (userName) {
         emojiInput.value = userName;
       } else {
@@ -580,5 +567,3 @@
     </script>
   </body>
 </html>
-
-
